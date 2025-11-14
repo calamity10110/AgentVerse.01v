@@ -3,3 +3,6 @@ agents:
   - CommunicatorAgent
   - OrchestratorAgent
   - LLMAgent
+  - SelfImprovementAgent
+  - HardwareAgent
+  - ApplicationAgent

@@ -25,6 +25,32 @@ class AgentManager:
                 except Exception as e:
                     print(f"Error loading module {module_name}: {e}")
 
+    def discover_and_load_skills(self, skill_directory="core/skills"):
+        """
+        Dynamically discovers and loads skills from the specified directory,
+        and attaches them to the appropriate agents.
+        """
+        print(f"Discovering skills in '{skill_directory}'...")
+        if not os.path.exists(skill_directory):
+            return
+
+        for filename in os.listdir(skill_directory):
+            if filename.endswith(".py") and filename != "__init__.py":
+                module_name = f"{skill_directory.replace('/', '.')}.{filename[:-3]}"
+                try:
+                    module = importlib.import_module(module_name)
+                    for attr_name in dir(module):
+                        attr = getattr(module, attr_name)
+                        if callable(attr) and not attr_name.startswith("__"):
+                            # For simplicity, we'll attach the new skill to the OrchestratorAgent
+                            # In a more advanced implementation, the LLM could decide which agent gets the skill.
+                            orchestrator = self._find_agent_by_class("OrchestratorAgent")
+                            if orchestrator:
+                                orchestrator.register_skill(attr_name, attr)
+                                print(f"Loaded skill '{attr_name}' and attached it to the OrchestratorAgent.")
+                except Exception as e:
+                    print(f"Error loading module {module_name}: {e}")
+
     def create_agent_instance(self, class_name, **kwargs):
         """
         Creates an instance of an agent class.
@@ -61,3 +87,12 @@ class AgentManager:
 
     def get_agent(self, agent_id: str) -> Agent:
         return self.agents.get(agent_id)
+
+    def _find_agent_by_class(self, class_name: str) -> Agent:
+        """
+        Finds an agent in the agent manager by its class name.
+        """
+        for agent in self.agents.values():
+            if agent.__class__.__name__ == class_name:
+                return agent
+        return None
